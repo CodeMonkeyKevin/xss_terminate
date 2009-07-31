@@ -7,12 +7,13 @@ module XssTerminate
 
   module ClassMethods
     def xss_terminate(options = {})
-      before_validation :sanitize_fields
+      before_validation :sanitize_fields, :sanitize_methods
 
       write_inheritable_attribute(:xss_terminate_options, {
         :except => (options[:except] || []),
         :html5lib_sanitize => (options[:html5lib_sanitize] || []),
-        :sanitize => (options[:sanitize] || [])
+        :sanitize => (options[:sanitize] || []),
+        :sanitize_methods => (options[:sanitize_methods] || [])
       })
       
       class_inheritable_reader :xss_terminate_options
@@ -47,6 +48,23 @@ module XssTerminate
         end
       end
       
+    end
+
+    def sanitize_methods
+      unless xss_terminate_options[:sanitize_methods].blank?
+        xss_terminate_options[:sanitize_methods].each do |method|
+          value = send(method)
+          next unless value.blank? || value.is_a?(String)
+          
+          if xss_terminate_options[:html5lib_sanitize].include?(method)
+            send("#{method}=", HTML5libSanitize.new.sanitize_html(value))
+          elsif xss_terminate_options[:sanitize].include?(method)
+            send("#{method}=", RailsSanitize.white_list_sanitizer.sanitize(value))
+          else
+            send("#{method}=", RailsSanitize.full_sanitizer.sanitize(value))
+          end
+        end
+      end
     end
   end
 end

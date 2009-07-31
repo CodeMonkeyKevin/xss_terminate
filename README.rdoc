@@ -58,6 +58,16 @@ and others sanitized. Fields not listed in the option arrays will be stripped.
    xss_terminate :except => [ :body ], :sanitize => [ :title ]
  end
 
+If you want to sanitize "fake fields"/attr_accessor/methods output you can include the method name in :sanitize_methods
+
+  class Message < ActiveRecord::Base
+    xss_terminate :sanitize_methods => [:method]
+  end
+  
+  class Message < ActiveRecord::Base
+    xss_terminate :html5lib_sanitize => [ :method ], :sanitize_methods => [:method]
+  end
+
 == Sanitizing existing records
 
 After installing +xss_terminate+ and configuring it to your liking, you can 
